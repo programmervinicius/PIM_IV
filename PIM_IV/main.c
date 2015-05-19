@@ -51,6 +51,19 @@ void pausarMenuPrincipal() {
 #endif;
 }
 
+int verTamanhoArquivoTexto(const char* file_name) {
+	FILE *file = fopen(file_name, "r");
+
+	if (file == NULL)
+		return 0;
+
+	fseek(file, 0, SEEK_END);
+	int size = ftell(file);
+	fclose(file);
+
+	return size;
+}
+
 /* Método......: main
  * Parâmetros..: Sem parâmetros
  * Descrição...: Metodo principal do aplicativo.
@@ -326,7 +339,6 @@ int main() {
 	i = 1;
 	iOpcao = -1;
 	memset(&cLinhaArquivo, 0, sizeof(cLinhaArquivo));
-	memset(&cResultLinhaArquivo, 0, sizeof(cResultLinhaArquivo));
 
 	while (i <= 4) {
 		fgets(cLinhaArquivo, MAX, fConfiguracoes);
@@ -467,14 +479,12 @@ int main() {
 				printf("Nao ha vagas disponiveis no estacionamento.");
 			else {
 				printf("::: ENTRADA DE VEICULO :::\n");
-				iCodEntrada++; /* Incrementa o codigo de entrada a cada
-				 nova entrada de veiculos */
 				printf(
 						"::: AVISO: A placa deve ter 8 caracteres. Exemplo: AAA-1234. :::\n");
 				printf("    Informe a Placa do Veiculo: ");
 				scanf("%s", &cPlaca);
 
-				/* Altera o caracteres da placa para ficarem maiusculos */
+				/* Altera os caracteres da placa para ficarem maiusculos */
 				i = 0;
 				while (i < 10) {
 					cPlaca[i] = toupper(cPlaca[i]);
@@ -486,18 +496,17 @@ int main() {
 					if ((cCharAux = strchr(cPlaca, '\n')) != NULL)
 						*cCharAux = '\0';
 
-					if ((cCharAux = strchr(listaEntradas[i].cPlaca,
-							'\n')) != NULL)
+					if ((cCharAux = strchr(listaEntradas[i].cPlaca, '\n'))
+							!= NULL)
 						*cCharAux = '\0';
 
 					if (strcmp(cPlaca, listaEntradas[i].cPlaca) == 0) {
-						while (strcmp(cPlaca, listaEntradas[i].cPlaca)
-								== 0) {
+						while (strcmp(cPlaca, listaEntradas[i].cPlaca) == 0) {
 							printf(
 									"\n\n    O veiculo ja se encontra no estacionamento.");
 							printf("\n    Por favor, informe outra placa: ");
 							scanf("%s", &cPlaca);
-							/* Altera o caracteres da placa para ficarem maiusculos */
+							/* Altera os caracteres da placa para ficarem maiusculos */
 							i = 0;
 							while (i < 10) {
 								cPlaca[i] = toupper(cPlaca[i]);
@@ -515,7 +524,7 @@ int main() {
 								cPlaca);
 						printf("    Informe a Placa do Veiculo: ");
 						scanf("%s", &cPlaca);
-						/* Altera o caracteres da placa para ficarem maiusculos */
+						/* Altera os caracteres da placa para ficarem maiusculos */
 						i = 0;
 						while (i < 10) {
 							cPlaca[i] = toupper(cPlaca[i]);
@@ -524,6 +533,7 @@ int main() {
 					}
 				}
 
+				iCodEntrada++; /* Incrementa o codigo de entrada a cada nova entrada de veiculos */
 				tNow = time(NULL);
 				strftime(cDataEntrada, 20, "%d/%m/%Y", localtime(&tNow));
 				strftime(cHorarioEntrada, 10, "%H:%M:%S", localtime(&tNow));
@@ -540,6 +550,7 @@ int main() {
 				printf("****************************************\n");
 				printf("________________________________________\n");
 
+				iUltimoCodEntrada = iCodEntrada;
 				listaEntradas[iCodEntrada].iCodEntrada = iCodEntrada;
 				strcpy(listaEntradas[iCodEntrada].cPlaca, cPlaca);
 				strcpy(listaEntradas[iCodEntrada].cDataEntrada, cDataEntrada);
@@ -568,7 +579,7 @@ int main() {
 					"::: AVISO: A placa deve ter 8 caracteres. Exemplo: AAA-1234. :::\n");
 			printf("    Informe a Placa do Veiculo: ");
 			scanf("%s", &cPlaca);
-			/* Altera o caracteres da placa para ficarem maiusculos */
+			/* Altera os caracteres da placa para ficarem maiusculos */
 			i = 0;
 			while (i < 10) {
 				cPlaca[i] = toupper(cPlaca[i]);
@@ -583,7 +594,7 @@ int main() {
 							cPlaca);
 					printf("    Informe a Placa do Veiculo: ");
 					scanf("%s", &cPlaca);
-					/* Altera o caracteres da placa para ficarem maiusculos */
+					/* Altera os caracteres da placa para ficarem maiusculos */
 					i = 0;
 					while (i < 10) {
 						cPlaca[i] = toupper(cPlaca[i]);
@@ -596,8 +607,7 @@ int main() {
 				if ((cCharAux = strchr(cPlaca, '\n')) != NULL)
 					*cCharAux = '\0';
 
-				if ((cCharAux = strchr(listaEntradas[i].cPlaca, '\n'))
-						!= NULL)
+				if ((cCharAux = strchr(listaEntradas[i].cPlaca, '\n')) != NULL)
 					*cCharAux = '\0';
 
 				/* Pesquisa por veiculo estacionado */
@@ -615,6 +625,7 @@ int main() {
 				strftime(cHorarioSaida, 10, "%H:%M:%S", localtime(&tNow));
 
 				/* Registra a saida */
+				iUltimoCodSaida = iCodSaida;
 				listaSaidas[iCodSaida].iCodSaida = iCodSaida;
 				strcpy(listaSaidas[iCodSaida].cPlaca, cPlaca);
 				strcpy(listaSaidas[iCodSaida].cDataSaida, cDataSaida);
@@ -669,6 +680,7 @@ int main() {
 				strftime(cDataPagamento, 20, "%d/%m/%Y", localtime(&tNow));
 				strftime(cHorarioPagamento, 10, "%H:%M:%S", localtime(&tNow));
 
+				iUltimoCodPagamento = iCodPagamento;
 				listaPagamentos[iCodPagamento].iCodPagamento = iCodPagamento;
 				strcpy(listaPagamentos[iCodPagamento].cPlaca, cPlaca);
 				strcpy(listaPagamentos[iCodPagamento].cDataPagamento,
@@ -696,7 +708,7 @@ int main() {
 						"____________________________________________________\n");
 				iTotalVagasDisponiveis++;
 
-				printf("\n\n::::: Num de Vagas Disponiveis: %d :::::\n",
+				printf("\n\n::::: Nº de Vagas Disponiveis: %d :::::\n",
 						iTotalVagasDisponiveis);
 			} else {
 				printf(
@@ -721,7 +733,7 @@ int main() {
 					printf(
 							"    Informe a Placa do Veiculo que deseja pesquisar: ");
 					scanf("%s", &cPlacaAux);
-					/* Altera o caracteres da placa para ficarem maiusculos */
+					/* Altera os caracteres da placa para ficarem maiusculos */
 					i = 0;
 					while (i < 10) {
 						cPlaca[i] = toupper(cPlaca[i]);
@@ -730,7 +742,7 @@ int main() {
 				}
 			}
 
-			/* Altera o caracteres da placa para ficarem maiusculos */
+			/* Altera os caracteres da placa para ficarem maiusculos */
 			i = 0;
 			while (i < 10) {
 				cPlacaAux[i] = toupper(cPlacaAux[i]);
@@ -742,12 +754,10 @@ int main() {
 				if ((cCharAux = strchr(cPlacaAux, '\n')) != NULL)
 					*cCharAux = '\0';
 
-				if ((cCharAux = strchr(listaEntradas[i].cPlaca, '\n'))
-						!= NULL)
+				if ((cCharAux = strchr(listaEntradas[i].cPlaca, '\n')) != NULL)
 					*cCharAux = '\0';
 
-				if (strcasecmp(listaEntradas[i].cPlaca, cPlacaAux)
-						== 0) {
+				if (strcasecmp(listaEntradas[i].cPlaca, cPlacaAux) == 0) {
 					iCodEntrada = i;
 					strcpy(cPlaca, listaEntradas[iCodEntrada].cPlaca);
 					strcpy(cDataEntrada,
@@ -796,7 +806,7 @@ int main() {
 					printf(
 							"    Informe a Placa do Veiculo que deseja pesquisar: ");
 					scanf("%s", &cPlacaAux);
-					/* Altera o caracteres da placa para ficarem maiusculos */
+					/* Altera os caracteres da placa para ficarem maiusculos */
 					i = 0;
 					while (i < 10) {
 						cPlacaAux[i] = toupper(cPlacaAux[i]);
@@ -805,7 +815,7 @@ int main() {
 				}
 			}
 
-			/* Altera o caracteres da placa para ficarem maiusculos */
+			/* Altera os caracteres da placa para ficarem maiusculos */
 			i = 0;
 			while (i < 10) {
 				cPlacaAux[i] = toupper(cPlacaAux[i]);
@@ -817,8 +827,7 @@ int main() {
 				if ((cCharAux = strchr(cPlacaAux, '\n')) != NULL)
 					*cCharAux = '\0';
 
-				if ((cCharAux = strchr(listaSaidas[i].cPlaca, '\n'))
-						!= NULL)
+				if ((cCharAux = strchr(listaSaidas[i].cPlaca, '\n')) != NULL)
 					*cCharAux = '\0';
 
 				if (strcasecmp(listaSaidas[i].cPlaca, cPlacaAux) == 0) {
@@ -869,7 +878,7 @@ int main() {
 					printf(
 							"    Informe a Placa do Veiculo que deseja pesquisar: ");
 					scanf("%s", &cPlacaAux);
-					/* Altera o caracteres da placa para ficarem maiusculos */
+					/* Altera os caracteres da placa para ficarem maiusculos */
 					i = 0;
 					while (i < 10) {
 						cPlacaAux[i] = toupper(cPlacaAux[i]);
@@ -878,7 +887,7 @@ int main() {
 				}
 			}
 
-			/* Altera o caracteres da placa para ficarem maiusculos */
+			/* Altera os caracteres da placa para ficarem maiusculos */
 			i = 0;
 			while (i < 10) {
 				cPlacaAux[i] = toupper(cPlacaAux[i]);
@@ -890,12 +899,10 @@ int main() {
 				if ((cCharAux = strchr(cPlacaAux, '\n')) != NULL)
 					*cCharAux = '\0';
 
-				if ((cCharAux = strchr(listaPagamentos[i].cPlaca, '\n'))
-						!= NULL)
+				if ((cCharAux = strchr(listaPagamentos[i].cPlaca, '\n')) != NULL)
 					*cCharAux = '\0';
 
-				if (strcasecmp(listaPagamentos[i].cPlaca, cPlacaAux)
-						== 0) {
+				if (strcasecmp(listaPagamentos[i].cPlaca, cPlacaAux) == 0) {
 					iCodPagamento = i;
 					strcpy(cPlaca, listaPagamentos[iCodPagamento].cPlaca);
 					strcpy(cDataEntrada,
@@ -939,24 +946,25 @@ int main() {
 
 			for (i = 1; i <= iCodEntrada; i++) {
 				if (listaEntradas[i].iCodEntrada > 0) {
-					if ((cCharAux = strchr(listaEntradas[i].cPlaca,
+					if ((cCharAux = strchr(listaEntradas[i].cPlaca, '\n'))
+							!= NULL)
+						*cCharAux = '\0';
+
+					if ((cCharAux = strchr(listaEntradas[i].cDataEntrada, '\n'))
+							!= NULL)
+						*cCharAux = '\0';
+
+					if ((cCharAux = strchr(listaEntradas[i].cHorarioEntrada,
 							'\n')) != NULL)
 						*cCharAux = '\0';
 
-					if ((cCharAux = strchr(
-							listaEntradas[i].cDataEntrada, '\n'))
-							!= NULL)
-						*cCharAux = '\0';
-
-					if ((cCharAux = strchr(
-							listaEntradas[i].cHorarioEntrada, '\n'))
-							!= NULL)
-						*cCharAux = '\0';
-
-					printf("\n:: ID Entrada: %d\n",	listaEntradas[i].iCodEntrada);
-					printf("   Placa:          %s\n",	listaEntradas[i].cPlaca);
-					printf("   Data:           %s\n",	listaEntradas[i].cDataEntrada);
-					printf("   Horario:      %s\n\n", listaEntradas[i].cHorarioEntrada);
+					printf("\n:: ID Entrada: %d\n",
+							listaEntradas[i].iCodEntrada);
+					printf("   Placa:          %s\n", listaEntradas[i].cPlaca);
+					printf("   Data:           %s\n",
+							listaEntradas[i].cDataEntrada);
+					printf("   Horario:      %s\n\n",
+							listaEntradas[i].cHorarioEntrada);
 				}
 			}
 			printf(":::: FIM DO RELATORIO ::::");
@@ -970,22 +978,22 @@ int main() {
 
 			for (i = 1; i <= iCodSaida; i++) {
 				if (listaSaidas[i].iCodSaida > 0) {
-					if ((cCharAux = strchr(listaSaidas[i].cPlaca, '\n'))
+					if ((cCharAux = strchr(listaSaidas[i].cPlaca, '\n')) != NULL)
+						*cCharAux = '\0';
+
+					if ((cCharAux = strchr(listaSaidas[i].cDataSaida, '\n'))
 							!= NULL)
 						*cCharAux = '\0';
 
-					if ((cCharAux = strchr(listaSaidas[i].cDataSaida,
-							'\n')) != NULL)
-						*cCharAux = '\0';
-
-					if ((cCharAux = strchr(listaSaidas[i].cHorarioSaida,
-							'\n')) != NULL)
+					if ((cCharAux = strchr(listaSaidas[i].cHorarioSaida, '\n'))
+							!= NULL)
 						*cCharAux = '\0';
 
 					printf("\n:: ID Saida: %d\n", listaSaidas[i].iCodSaida);
 					printf("   Placa:        %s\n", listaSaidas[i].cPlaca);
 					printf("   Data :        %s\n", listaSaidas[i].cDataSaida);
-					printf("   Horario:    %s\n\n", listaSaidas[i].cHorarioSaida);
+					printf("   Horario:    %s\n\n",
+							listaSaidas[i].cHorarioSaida);
 				}
 			}
 			printf(":::: FIM DO RELATORIO ::::");
@@ -999,18 +1007,16 @@ int main() {
 
 			for (i = 1; i <= iCodPagamento; i++) {
 				if (listaPagamentos[i].iCodPagamento > 0) {
-					if ((cCharAux = strchr(listaPagamentos[i].cPlaca,
+					if ((cCharAux = strchr(listaPagamentos[i].cPlaca, '\n'))
+							!= NULL)
+						*cCharAux = '\0';
+
+					if ((cCharAux = strchr(listaPagamentos[i].cDataPagamento,
 							'\n')) != NULL)
 						*cCharAux = '\0';
 
-					if ((cCharAux = strchr(
-							listaPagamentos[i].cDataPagamento, '\n'))
-							!= NULL)
-						*cCharAux = '\0';
-
-					if ((cCharAux = strchr(
-							listaPagamentos[i].cHorarioPagamento, '\n'))
-							!= NULL)
+					if ((cCharAux = strchr(listaPagamentos[i].cHorarioPagamento,
+							'\n')) != NULL)
 						*cCharAux = '\0';
 
 					printf("\n:: ID Pagamento: %d\n",
@@ -1060,8 +1066,7 @@ int main() {
 				iCodEntradaAux = iCodEntrada;
 
 				if (iCodEntradaAux > 0) {
-					for (i = iAux; i <= iCodEntradaAux;
-							i++) {
+					for (i = iAux; i <= iCodEntradaAux; i++) {
 						iCodEntrada = i;
 
 						if ((cCharAux = strchr(
@@ -1079,7 +1084,12 @@ int main() {
 								'\n')) != NULL)
 							*cCharAux = '\0';
 
-						fprintf(fEntradas, "\n\nID Entrada %d\n",
+						if (verTamanhoArquivoTexto(cNomeArquivo) == 0)
+							fprintf(fEntradas, "Entrada de Veiculo\n");
+						else
+							fprintf(fEntradas, "\n\nEntrada de Veiculo\n");
+
+						fprintf(fEntradas, "%d\n",
 								listaEntradas[iCodEntrada].iCodEntrada);
 						fprintf(fEntradas, "%s\n",
 								listaEntradas[iCodEntrada].cPlaca);
@@ -1110,8 +1120,7 @@ int main() {
 				iCodSaidaAux = iCodSaida;
 
 				if (iCodSaidaAux > 0) {
-					for (i = iAux; i <= iCodSaidaAux;
-							i++) {
+					for (i = iAux; i <= iCodSaidaAux; i++) {
 						iCodSaida = i;
 
 						if ((cCharAux = strchr(listaSaidas[iCodSaida].cPlaca,
@@ -1128,7 +1137,12 @@ int main() {
 								!= NULL)
 							*cCharAux = '\0';
 
-						fprintf(fSaidas, "\n\nID Saida %d\n",
+						if (verTamanhoArquivoTexto(cNomeArquivo) == 0)
+							fprintf(fSaidas, "Saida de Veiculo\n");
+						else
+							fprintf(fSaidas, "\n\nSaida de Veiculo\n");
+
+						fprintf(fSaidas, "%d\n",
 								listaSaidas[iCodSaida].iCodSaida);
 						fprintf(fSaidas, "%s\n", listaSaidas[iCodSaida].cPlaca);
 						fprintf(fSaidas, "%s\n",
@@ -1158,8 +1172,7 @@ int main() {
 				iCodPagamentoAux = iCodPagamento;
 
 				if (iCodPagamentoAux > 0) {
-					for (i = iAux;
-							i <= iCodPagamentoAux; i++) {
+					for (i = iAux; i <= iCodPagamentoAux; i++) {
 						iCodPagamento = i;
 
 						if ((cCharAux = strchr(
@@ -1178,7 +1191,12 @@ int main() {
 										'\n')) != NULL)
 							*cCharAux = '\0';
 
-						fprintf(fPagamentos, "\n\nID Pagamento %d\n",
+						if (verTamanhoArquivoTexto(cNomeArquivo) == 0)
+							fprintf(fPagamentos, "Pagamento\n");
+						else
+							fprintf(fPagamentos, "\n\nPagamento\n");
+
+						fprintf(fPagamentos, "%d\n",
 								listaPagamentos[iCodPagamento].iCodPagamento);
 						fprintf(fPagamentos, "%s\n",
 								listaPagamentos[iCodPagamento].cPlaca);
