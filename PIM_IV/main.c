@@ -370,64 +370,75 @@ int main() {
 	fclose(fConfiguracoes);
 	/* Fim leitura arquivos */
 
+	/* Cria um título para a janela do Sistema */
+	system("TITLE SISTEMA DE ESTACIONAMENTO DE VEICULOS ");
+	system("xrandr > resolutions.tmp"); // direct output to 'resolutions.tmp' retrieve possible resolutions from 'resolutions.tmp'
+	system("xrandr -s resolution_id"); // select a certain screen resolution
+
 	if (iTotalVagasEstacionamento == 0) {
 		printf(" __________________________________________________________________________\n");
-		printf(" ::::::::::::::::  SISTEMA DE ESTACIONAMENTO DE VEICULOS  :::::::::::::::::\n\n");
+		printf(" ::::::::::::::::  SISTEMA DE ESTACIONAMENTO DE VEICULOS  :::::::::::::::::\n");
+		printf(" ::                                                                      ::\n");
 		printf(" ::            PARA COMECAR A USAR ESTE SISTEMA, E NECESSARIO            ::\n");
 		printf(" ::              DEFINIR ALGUMAS CONFIGURACOES IMPORTANTES.              ::\n");
 		printf(" ::           VAMOS DEFINIR AGORA OS VALORES DA PRIMEIRA HORA,           ::\n");
 		printf(" ::          DAS DEMAIS HORAS, TOTAL DE VAGAS DO ESTACIONAMENTO          ::\n");
 		printf(" ::                  E O TOTAL DE VAGAS DISPONIVEIS.                     ::\n");
-		printf("\n\n ::        Todos os dados informados somente serao armazenados           ::");
-		printf("\n ::                no arquivo de texto ao sair do sistema.               ::");
-		printf("\n\n :: Observacao: Os valores em decimais devem ser informados com pontos.  ::");
-		printf("\n ::             Caso for informado com virgula entao ocorrera erro.      ::");
-		printf("\n\n :: Informe o valor para a primeira hora: ");
+		printf(" ::                                                                      ::\n");
+		printf(" ::        Todos os dados informados somente serao armazenados           ::\n");
+		printf(" ::                no arquivo de texto ao sair do sistema.               ::\n");
+		printf(" :: Observacao: Os valores em decimais devem ser informados com pontos.  ::\n");
+		printf(" ::             Caso for informado com virgula entao ocorrera erro.      ::\n");
+		printf(" ::                                                                      ::\n");
+		printf(" :: Informe o valor para a primeira hora: ");
 		scanf("%f", &fValorPrimeiraHora);
 
 		if (fValorPrimeiraHora == 0) {
 			while (fValorPrimeiraHora == 0) {
-				printf("\n :: O valor deve ser maior que 0.");
+				printf(" ::   Obs.: O valor deve ser maior que 0.");
 				printf("\n :: Informe o valor para a primeira hora: ");
 				scanf("%f", &fValorPrimeiraHora);
 			}
 		}
 
+		printf(" ::");
 		printf("\n :: Informe o valor para as demais horas: ");
 		scanf("%f", &fValorDemaisHoras);
 
 		if (fValorDemaisHoras == 0) {
 			while (fValorDemaisHoras == 0) {
-				printf("\n :: O valor deve ser maior que 0.");
+				printf(" ::   Obs.: O valor deve ser maior que 0.");
 				printf("\n :: Informe o valor para as demais horas: ");
 				scanf("%f", &fValorDemaisHoras);
 			}
 		}
 
+		printf(" ::");
 		printf("\n :: Informe o no. total de vagas do estacionamento: ");
 		scanf("%d", &iTotalVagasEstacionamento);
 
 		if (iTotalVagasEstacionamento == 0) {
 			while (iTotalVagasEstacionamento == 0) {
-				printf("\n :: O no. total de vagas do estacionamento deve ser maior que 0.");
+				printf(" ::   O no. total de vagas do estacionamento deve ser maior que 0.");
 				printf("\n :: Informe o no. total de vagas do estacionamento: ");
 				scanf("%d", &iTotalVagasEstacionamento);
 			}
 		}
 
+		printf(" ::");
 		printf("\n :: E, por ultimo, informe o no. total de vagas disponiveis: ");
 		scanf("%d", &iTotalVagasDisponiveis);
 
 		if (iTotalVagasDisponiveis == 0) {
 			while (iTotalVagasDisponiveis == 0) {
-				printf("\n :: O no. total de vagas disponiveis deve ser maior que 0.");
+				printf(" ::   O no. total de vagas disponiveis deve ser maior que 0.");
 				printf("\n :: Informe o no. total de vagas disponiveis: ");
 				scanf("%d", &iTotalVagasDisponiveis);
 			}
 		}
 		printf(" __________________________________________________________________________\n");
 		fflush(stdin); /* Limpa a entrada padrao do sistema (teclado) */
-		printf("\n\n Tecle 'Enter' para entrar no menu do sistema.\n");
+		printf("\n Tecle 'Enter' para entrar no menu do sistema.\n");
 		getchar();
 	}
 
