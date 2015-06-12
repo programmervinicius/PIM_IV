@@ -379,8 +379,11 @@ int main() {
 
 	/* Cria um título para a janela do Sistema */
 	strcpy (cTituloSistema, "TITLE SISTEMA DE ESTACIONAMENTO DE VEICULOS - DATA: ");
+	strftime(cDataAberturaSistema, 20, "%d/%m/%Y", localtime(&dtDataAberturaSistema));
 	strcat (cTituloSistema, cDataAberturaSistema);
 	system(cTituloSistema);
+
+	strftime(cDataAberturaSistema, 20, "%d%m%Y", localtime(&dtDataAberturaSistema));
 
 	if (iTotalVagasEstacionamento == 0) {
 		printf(" __________________________________________________________________________\n");
@@ -433,8 +436,7 @@ int main() {
 		}
 
 		printf(" ::");
-		printf(
-				"\n :: E, por ultimo, informe o no. total de vagas disponiveis: ");
+		printf("\n :: E, por ultimo, informe o no. total de vagas disponiveis: ");
 		scanf("%d", &iTotalVagasDisponiveis);
 
 		if (iTotalVagasDisponiveis == 0) {
@@ -444,8 +446,7 @@ int main() {
 				scanf("%d", &iTotalVagasDisponiveis);
 			}
 		}
-		printf(
-				" __________________________________________________________________________\n");
+		printf(" __________________________________________________________________________\n");
 		fflush(stdin); /* Limpa a entrada padrao do sistema (teclado) */
 		printf("\n Tecle 'Enter' para entrar no menu do sistema.\n");
 		getchar();
@@ -455,10 +456,8 @@ int main() {
 
 	/* Laco do Menu Principal */
 	while (1) {
-		printf(
-				" __________________________________________________________________________\n");
-		printf(
-				" ::::::::::::::::  SISTEMA DE ESTACIONAMENTO DE VEICULOS  :::::::::::::::::\n\n");
+		printf(" __________________________________________________________________________\n");
+		printf(" ::::::::::::::::  SISTEMA DE ESTACIONAMENTO DE VEICULOS  :::::::::::::::::\n\n");
 		printf("   == INFORMACOES UTEIS ==\n");
 		printf("   Valor da Primeira Hora:         R$ %.2lf\n", fValorPrimeiraHora);
 		printf("   Valor das Demais Horas:         R$ %.2lf\n", fValorDemaisHoras);
@@ -479,8 +478,7 @@ int main() {
 		printf("  << Gestao do Caixa >> \n");
 		printf("  9 - Fechamento.\n\n");
 		printf("  0 - Sair\n");
-		printf(
-				" __________________________________________________________________________\n");
+		printf(" __________________________________________________________________________\n");
 		printf("\n Escolha uma das opcoes acima: ");
 		scanf("%d", &iOpcaoEscolhida);
 		getchar();
@@ -672,8 +670,7 @@ int main() {
 
 				printf("\n >>>>>> Pagamento Confirmado com Sucesso. <<<<<<\n");
 				fflush(stdin); /* Limpa a entrada padrao do sistema (teclado) */
-				printf(
-						"\n Tecle 'Enter' para gerar o recibo de saida de veiculo e de pagamento.\n");
+				printf("\n Tecle 'Enter' para gerar o recibo de saida de veiculo e de pagamento.\n");
 				getchar();
 
 				/* Registra o pagamento */
