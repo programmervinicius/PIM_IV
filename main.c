@@ -12,8 +12,8 @@ struct EntradaVeiculo {
 	int    iCodEntrada;
 	char   cPlaca[9],
 	       cDataEntrada[12],
-		   cHorarioEntrada[8];
-	time_t tDataHorarioEntrada;
+	       cHorarioEntrada[8];
+	time_t dtDataHorarioEntrada;
 	double dDataHorarioEntrada;
 };
 
@@ -21,8 +21,8 @@ struct SaidaVeiculo {
 	int    iCodSaida;
 	char   cPlaca[9],
 	       cDataSaida[12],
-		   cHorarioSaida[8];
-	time_t tDataHorarioSaida;
+	       cHorarioSaida[8];
+	time_t dtDataHorarioSaida;
 	double dDataHorarioSaida;
 };
 
@@ -30,25 +30,25 @@ struct Pagamento {
 	int   iCodPagamento;
 	char  cPlaca[9],
 	      cDataPagamento[12],
-		  cHorarioPagamento[8];
+	      cHorarioPagamento[8];
 	float fValorPagamento;
 };
 
+struct FechamentoCaixa {
+	int    iCodFechamento;
+	char   cDataFechamento[12],
+	       cHorarioFechamento[8];
+	time_t dtDataHorarioFechamento;
+	double dDataHorarioFechamento;
+	float  fValorTotalFechamento;
+};
+
 void limparTela() {
-#ifdef linux || LINUX || Linux || UNIX
-	printf("\e[H\e[2J"); /* Limpa a tela do sistema - Linux*/
-#elif defined WIN32
 	system("cls"); /* Limpa a tela do sistema - Windows*/
-#endif;
 }
 
 void pausarMenuPrincipal() {
-#ifdef linux || LINUX || Linux || UNIX
-	fflush(stdin);
 	getchar();
-#elif defined WIN32
-	system("pause>>null");
-#endif;
 }
 
 int verTamanhoArquivoTexto(const char* file_name) {
@@ -74,13 +74,15 @@ int main() {
 	/* ----------- Inicio do metodo principal ----------- */
 
 	/* Criacao de nomes para as structs de Entradas e Saidas de Veiculos e Pagamentos */
-	struct EntradaVeiculo listaEntradas[3000];
-	struct SaidaVeiculo   listaSaidas[3000];
-	struct Pagamento      listaPagamentos[3000];
+	struct EntradaVeiculo  listaEntradas[10000];
+	struct SaidaVeiculo    listaSaidas[10000];
+	struct Pagamento       listaPagamentos[10000];
+	struct FechamentoCaixa listaFechamentos[10000];
 
 	/* Variaveis para armazenar os valores de placas e a linha do arquivo do carregamento das structs */
 	char cPlaca[9]                = " ",
 		 cPlacaAux[9]             = " ",
+		 cDataFechamentoAux[11]   = " ",
 		 cLinhaArquivo[MAX]       = " ",
 		 cDataAberturaSistema[12] = " ",
 		 cNomeArquivo[512]        = " ",
@@ -93,23 +95,28 @@ int main() {
 	/* Declaraco de Variaveis do sistema */
 	int i,
 	    iAux,
-		iOpcao,
-		iOpcaoEscolhida,
-		iVeiculoEncontrado,
-		iTotalEntradasHoje,
-		iTotalSaidasHoje,
-		iTotalVagasEstacionamento,
-		iTotalVagasDisponiveis,
-		iUltimoCodEntrada,
-		iUltimoCodSaida,
-		iUltimoCodPagamento,
-		iPagamentoConfirmado,
-		iOpcaoFechamentoCaixa;
+	    iOpcao,
+	    iOpcaoEscolhida,
+	    iVeiculoEncontrado,
+		iPagamentoEncontrado,
+		iFechamentoEncontrado,
+	    iTotalEntradasHoje,
+	    iTotalSaidasHoje,
+	    iTotalVagasEstacionamento,
+	    iTotalVagasDisponiveis,
+	    iUltimoCodEntrada,
+	    iUltimoCodSaida,
+	    iUltimoCodPagamento,
+	    iUltimoCodFechamento,
+	    iPagamentoConfirmado,
+	    iOpcaoFechamentoCaixa,
+	    iRealizouFechamentoHoje,
+	    iPodeImprimirRelatorio;
 
 	/* Variaveis para armazenar o valor da primeira hora e das demais horas */
 	float fValorPrimeiraHora,
 	      fValorDemaisHoras,
-		  fValorConfirmado;
+	      fValorConfirmado;
 
 	/* Variavel para trabalhar com a data e hora atual */
 	time_t dtDataHorarioAgora;
@@ -119,29 +126,38 @@ int main() {
 	FILE* fEntradas;
 	FILE* fSaidas;
 	FILE* fPagamentos;
+	FILE* fFechamentos;
 	FILE* fConfiguracoes;
+	FILE* fRelatorio;
 
 	/* Declaraco de Variaveis das Entradas de Veiculos */
 	int    iCodEntrada,
 	       iCodEntradaAux;
-	char   cDataEntrada[12] = " ",
+	char   cDataEntrada[12]   = " ",
 		   cHorarioEntrada[8] = " ";
 	double dDataHorarioEntrada;
 
 	/* Declaraco de Variaveis das Saidas de Veiculos */
 	int    iCodSaida,
 	       iCodSaidaAux;
-	char   cDataSaida[12] = " ",
-	       cHorarioSaida[8] = " ";
+	char   cDataSaida[12]   = " ",
+		   cHorarioSaida[8] = " ";
 	double dDataHorarioSaida;
 
 	/* Declaracao de Variaveis dos Pagamentos */
 	int    iCodPagamento,
 	       iCodPagamentoAux;
 	char   cDataPagamento[12]   = " ",
-	       cHorarioPagamento[8] = " ";
+		   cHorarioPagamento[8] = " ";
 	float  fValorPagamento;
 	double dDiferencaSegundos;
+
+	/* Declaracao de Variaveis dos Fechamentos */
+	int    iCodFechamento,
+	       iCodFechamentoAux;
+	char   cDataFechamento[12]   = " ",
+		   cHorarioFechamento[8] = " ";
+	float  fValorTotalFechamento;
 
 	/* Inicializacao e limpeza de variaveis */
 	i                         = 0;
@@ -152,6 +168,8 @@ int main() {
 	iCodSaidaAux              = 0;
 	iCodPagamento             = 0;
 	iCodPagamentoAux          = 0;
+	iCodFechamento            = 0;
+	iCodFechamentoAux         = 0;
 	iOpcaoEscolhida           = 0;
 	iVeiculoEncontrado        = 0;
 	iTotalEntradasHoje        = 0;
@@ -161,9 +179,12 @@ int main() {
 	iUltimoCodEntrada         = 0;
 	iUltimoCodSaida           = 0;
 	iUltimoCodPagamento       = 0;
+	iUltimoCodFechamento      = 0;
 	iPagamentoConfirmado      = 0;
 	iOpcaoFechamentoCaixa     = 0;
+	iRealizouFechamentoHoje   = 0;
 	fValorPagamento           = 0;
+	fValorTotalFechamento     = 0;
 	fValorConfirmado          = 0;
 	dDataHorarioEntrada       = 0;
 	dDataHorarioEntrada       = 0;
@@ -178,19 +199,13 @@ int main() {
 	sprintf(cNomeArquivo, "%s%s%s", "entradas_", cDataAberturaSistema, cExtensaoArquivo);
 
 	/* Abre um arquivo de texto para leitura */
-	fEntradas = fopen(cNomeArquivo, "rt");
+	fEntradas = fopen(cNomeArquivo, "a+");
 
 	if (fEntradas == NULL) /* Se houve erro na abertura */
-	{
-		/* Cria um arquivo de texto caso nao encontrar nenhum arquivo no diretorio do sistema */
-		if ((fEntradas = fopen(cNomeArquivo, "a+")) == NULL) {
-			perror("Erro ao abrir arquivo de entradas de veiculos.");
-			exit(1);
-		}
-	}
+		printf("Erro ao abrir arquivo de entradas de veiculos.");
 
 	/* Inicializacao das variaveis */
-	i = 1;
+	i      = 1;
 	iOpcao = -1;
 	memset(&cLinhaArquivo, 0, sizeof(cLinhaArquivo));
 	memset(&cResultLinhaArquivo, 0, sizeof(cResultLinhaArquivo));
@@ -215,8 +230,8 @@ int main() {
 				fgets(listaEntradas[iCodEntrada].cHorarioEntrada, MAX, fEntradas);
 				fgets(cLinhaArquivo, MAX, fEntradas);
 				dDataHorarioEntrada = strtod(cLinhaArquivo, NULL);
-				listaEntradas[iCodEntrada].dDataHorarioEntrada = dDataHorarioEntrada;
-				listaEntradas[iCodEntrada].tDataHorarioEntrada = dDataHorarioEntrada;
+				listaEntradas[iCodEntrada].dDataHorarioEntrada  = dDataHorarioEntrada;
+				listaEntradas[iCodEntrada].dtDataHorarioEntrada = dDataHorarioEntrada;
 				break;
 			}
 		}
@@ -228,19 +243,13 @@ int main() {
 	sprintf(cNomeArquivo, "%s%s%s", "saidas_", cDataAberturaSistema, cExtensaoArquivo);
 
 	/* Abre um arquivo de texto para leitura */
-	fSaidas = fopen(cNomeArquivo, "rt");
+	fSaidas = fopen(cNomeArquivo, "a+");
 
 	if (fSaidas == NULL) /* Se houve erro na abertura */
-	{
-		/* Cria um arquivo de texto caso nao encontrar nenhum arquivo no diretorio do sistema */
-		if ((fSaidas = fopen(cNomeArquivo, "a+")) == NULL) {
-			perror("Erro ao abrir arquivo de saidas de veiculos.");
-			exit(1);
-		}
-	}
+		printf("Erro ao abrir arquivo de saidas de veiculos.");
 
 	/* Inicializacao das variaveis */
-	i = 1;
+	i      = 1;
 	iOpcao = -1;
 	memset(&cLinhaArquivo, 0, sizeof(cLinhaArquivo));
 	memset(&cResultLinhaArquivo, 0, sizeof(cResultLinhaArquivo));
@@ -265,8 +274,8 @@ int main() {
 				fgets(listaSaidas[iCodSaida].cHorarioSaida, MAX, fSaidas);
 				fgets(cLinhaArquivo, MAX, fSaidas);
 				dDataHorarioSaida = strtod(cLinhaArquivo, NULL);
-				listaSaidas[iCodSaida].dDataHorarioSaida = dDataHorarioSaida;
-				listaSaidas[iCodSaida].tDataHorarioSaida = dDataHorarioEntrada;
+				listaSaidas[iCodSaida].dDataHorarioSaida  = dDataHorarioSaida;
+				listaSaidas[iCodSaida].dtDataHorarioSaida = dDataHorarioEntrada;
 				break;
 			}
 		}
@@ -278,19 +287,13 @@ int main() {
 	sprintf(cNomeArquivo, "%s%s%s", "pagamentos_", cDataAberturaSistema, cExtensaoArquivo);
 
 	/* Abre um arquivo de texto para leitura */
-	fPagamentos = fopen(cNomeArquivo, "rt");
+	fPagamentos = fopen(cNomeArquivo, "a+");
 
 	if (fPagamentos == NULL) /* Se houve erro na abertura */
-	{
-		/* Cria um arquivo de texto caso nao encontrar nenhum arquivo no diretorio do sistema */
-		if ((fPagamentos = fopen(cNomeArquivo, "a+")) == NULL) {
-			perror("Erro ao abrir arquivo de pagamentos.");
-			exit(1);
-		}
-	}
+		printf("Erro ao abrir arquivo de pagamentos.");
 
 	/* Inicializacao das variaveis */
-	i = 1;
+	i      = 1;
 	iOpcao = -1;
 	memset(&cLinhaArquivo, 0, sizeof(cLinhaArquivo));
 	memset(&cResultLinhaArquivo, 0, sizeof(cResultLinhaArquivo));
@@ -323,9 +326,52 @@ int main() {
 		i++;
 	}
 
-	fclose(fEntradas);
-	fclose(fSaidas);
-	fclose(fPagamentos);
+	/* Cria o nome do arquivo de fechamentos de caixa */
+	sprintf(cNomeArquivo, "%s%s%s", "fechamentos_", cDataAberturaSistema, cExtensaoArquivo);
+
+	/* Abre um arquivo de texto para leitura */
+	fFechamentos = fopen(cNomeArquivo, "a+");
+
+	if (fFechamentos == NULL) /* Se houve erro na abertura */
+		printf("Erro ao abrir arquivo de fechamentos de caixa.");
+
+	/* Inicializacao das variaveis */
+	i      = 1;
+	iOpcao = -1;
+	memset(&cLinhaArquivo, 0, sizeof(cLinhaArquivo));
+	memset(&cResultLinhaArquivo, 0, sizeof(cResultLinhaArquivo));
+
+	while (!feof(fFechamentos)) {
+		cResultLinhaArquivo = fgets(cLinhaArquivo, MAX, fFechamentos); /* Le uma linha (inclusive com o '\n') */
+
+		if (cResultLinhaArquivo) /* Se foi possivel ler */
+		{
+			if (strcmp(cLinhaArquivo, "Fechamento\n") == 0)
+				iOpcao = 0;
+
+			if (iOpcao > -1)
+				cResultLinhaArquivo = fgets(cLinhaArquivo, MAX, fFechamentos);
+
+			if (iOpcao == 0) {
+				iCodFechamento = atoi(cLinhaArquivo);
+				iUltimoCodFechamento = iCodFechamento;
+				listaFechamentos[iCodFechamento].iCodFechamento = iCodFechamento;
+				fgets(listaFechamentos[iCodFechamento].cDataFechamento, MAX, fFechamentos);
+				fgets(listaFechamentos[iCodFechamento].cHorarioFechamento, MAX, fFechamentos);
+				fgets(cLinhaArquivo, MAX, fFechamentos);
+				fValorTotalFechamento = strtod(cLinhaArquivo, NULL);
+				listaFechamentos[iCodFechamento].fValorTotalFechamento = fValorTotalFechamento;
+				break;
+			}
+		}
+		iOpcao = -1;
+		i++;
+	}
+
+	//fclose(fEntradas);
+	//fclose(fSaidas);
+	//fclose(fPagamentos);
+	//fclose(fFechamentos);
 	/********* ----------- Fim da da rotina de carregamento das structs ----------- *********/
 
 	limparTela();
@@ -335,23 +381,17 @@ int main() {
 	sprintf(cNomeArquivo, "%s%s", "configuracoes", cExtensaoArquivo);
 
 	/* Abre um arquivo de texto para leitura */
-	fConfiguracoes = fopen(cNomeArquivo, "rt");
+	fConfiguracoes = fopen(cNomeArquivo, "a+");
 
 	if (fConfiguracoes == NULL) /* Se houve erro na abertura */
-	{
-		/* Cria um arquivo de texto caso nao encontrar nenhum arquivo no diretorio do sistema */
-		if ((fConfiguracoes = fopen(cNomeArquivo, "a+")) == NULL) {
-			perror("Erro ao abrir arquivo de configuracoes.");
-			exit(1);
-		}
-	}
+		printf("Erro ao abrir arquivo de configuracoes.");
 
 	/* Inicializacao das variaveis */
-	i = 1;
+	i      = 1;
 	iOpcao = -1;
 	memset(&cLinhaArquivo, 0, sizeof(cLinhaArquivo));
 
-	while (i <= 4) {
+	while (i <= 5) {
 		fgets(cLinhaArquivo, MAX, fConfiguracoes);
 
 		switch (i) {
@@ -370,11 +410,15 @@ int main() {
 		case 4:
 			iTotalVagasDisponiveis = strtod(cLinhaArquivo, NULL);
 			break;
+
+		case 5:
+			iRealizouFechamentoHoje = 0; //strtod(cLinhaArquivo, NULL);
+			break;
 		}
 		i++;
 	}
 
-	fclose(fConfiguracoes);
+	//fclose(fConfiguracoes);
 	/* Fim leitura arquivos */
 
 	/* Cria um título para a janela do Sistema */
@@ -439,17 +483,10 @@ int main() {
 		printf("\n :: E, por ultimo, informe o no. total de vagas disponiveis: ");
 		scanf("%d", &iTotalVagasDisponiveis);
 
-		if (iTotalVagasDisponiveis == 0) {
-			while (iTotalVagasDisponiveis == 0) {
-				printf(" ::   O no. total de vagas disponiveis deve ser maior que 0.");
-				printf("\n :: Informe o no. total de vagas disponiveis: ");
-				scanf("%d", &iTotalVagasDisponiveis);
-			}
-		}
 		printf(" __________________________________________________________________________\n");
 		fflush(stdin); /* Limpa a entrada padrao do sistema (teclado) */
 		printf("\n Tecle 'Enter' para entrar no menu do sistema.\n");
-		getchar();
+		pausarMenuPrincipal();
 	}
 
 	limparTela();
@@ -458,26 +495,31 @@ int main() {
 	while (1) {
 		printf(" __________________________________________________________________________\n");
 		printf(" ::::::::::::::::  SISTEMA DE ESTACIONAMENTO DE VEICULOS  :::::::::::::::::\n\n");
-		printf("   == INFORMACOES UTEIS ==\n");
+		printf("   :: INFORMACOES UTEIS ::\n");
 		printf("   Valor da Primeira Hora:         R$ %.2lf\n", fValorPrimeiraHora);
 		printf("   Valor das Demais Horas:         R$ %.2lf\n", fValorDemaisHoras);
 		printf("   No. Total de Vagas:             %d\n", iTotalVagasEstacionamento);
-		printf("   No. Total de Vagas Disponiveis: %d\n\n\n", iTotalVagasDisponiveis);
-		printf(" << Menu do Sistema >> \n");
+		printf("   No. Total de Vagas Disponiveis: %d\n", iTotalVagasDisponiveis);
+		printf("   Os arquivos de texto gerados pelo sistema ficam armazenados na mesma\n");
+		printf("   pasta do executavel e os dados gerados sao salvos na saida do sistema.\n\n\n");
+		printf(" << Menu do Sistema >>\n");
 		printf("  << Entradas e Saidas de Veiculos >> \n");
-		printf("  1 - Entrada de Veiculo.\n");
-		printf("  2 - Saida de Veiculo.\n\n");
-		printf("  << Pesquisas >> \n");
-		printf("  3 - Pesquisa de Registro de Entrada.\n");
-		printf("  4 - Pesquisa de Registro de Saida.\n");
-		printf("  5 - Pesquisa de Registro de Pagamento.\n\n");
-		printf("  << Relatorios >> \n");
-		printf("  6 - Impressao de Todas as Entradas.\n");
-		printf("  7 - Impressao de Todas as Saidas.\n");
-		printf("  8 - Impressao de Todos os Pagamentos.\n\n");
-		printf("  << Gestao do Caixa >> \n");
-		printf("  9 - Fechamento.\n\n");
-		printf("  0 - Sair\n");
+		printf("  1  - Entrada de Veiculo\n");
+		printf("  2  - Saida de Veiculo\n\n");
+		printf("  << Pesquisas >>\n");
+		printf("  3  - Pesquisa de Registro de Entrada\n");
+		printf("  4  - Pesquisa de Registro de Saida\n");
+		printf("  5  - Pesquisa de Registro de Pagamento\n");
+		printf("  6  - Pesquisa de Registro de Fechamento\n\n");
+		printf("  << Relatorios >>\n");
+		printf("  7  - Impressao de Todas as Entradas\n");
+		printf("  8  - Impressao de Todas as Saidas\n");
+		printf("  9  - Impressao de Todos os Pagamentos\n");
+		printf("  10 - Impressao de Todos os Fechamentos\n\n");
+		printf("  << Gestao do Caixa >>\n");
+		printf("  11 - Fechamento de Caixa do Estacionamento\n");
+		printf("  12 - Consulta de Status do Caixa\n\n");
+		printf("  0  - Sair do Sistema\n");
 		printf(" __________________________________________________________________________\n");
 		printf("\n Escolha uma das opcoes acima: ");
 		scanf("%d", &iOpcaoEscolhida);
@@ -508,8 +550,7 @@ int main() {
 					if ((cCharAux = strchr(cPlaca, '\n')) != NULL)
 						*cCharAux = '\0';
 
-					if ((cCharAux = strchr(listaEntradas[i].cPlaca, '\n'))
-							!= NULL)
+					if ((cCharAux = strchr(listaEntradas[i].cPlaca, '\n')) != NULL)
 						*cCharAux = '\0';
 
 					if (strcmp(cPlaca, listaEntradas[i].cPlaca) == 0) {
@@ -550,6 +591,12 @@ int main() {
 				strftime(cHorarioEntrada, 10, "%H:%M:%S", localtime(&dtDataHorarioAgora));
 				printf("\n ::: Entrada de Veiculo realizada com Sucesso :::\n\n");
 
+				if ((cCharAux = strchr(cDataEntrada, '\n')) != NULL)
+					*cCharAux = '\0';
+
+				if ((cCharAux = strchr(cHorarioEntrada, '\n')) != NULL)
+					*cCharAux = '\0';
+
 				/* Imprimir recibo de entrada de veiculo */
 				printf(" ________________________________________\n");
 				printf(" ***** RECIBO DE ENTRADA DE VEICULO *****\n");
@@ -565,8 +612,8 @@ int main() {
 				strcpy(listaEntradas[iCodEntrada].cPlaca, cPlaca);
 				strcpy(listaEntradas[iCodEntrada].cDataEntrada, cDataEntrada);
 				strcpy(listaEntradas[iCodEntrada].cHorarioEntrada, cHorarioEntrada);
-				time(&listaEntradas[iCodEntrada].tDataHorarioEntrada);
-				listaEntradas[iCodEntrada].dDataHorarioEntrada = listaEntradas[iCodEntrada].tDataHorarioEntrada;
+				time(&listaEntradas[iCodEntrada].dtDataHorarioEntrada);
+				listaEntradas[iCodEntrada].dDataHorarioEntrada = listaEntradas[iCodEntrada].dtDataHorarioEntrada;
 				iTotalVagasDisponiveis--;
 				iTotalEntradasHoje++;
 
@@ -635,14 +682,14 @@ int main() {
 				strcpy(listaSaidas[iCodSaida].cPlaca, cPlaca);
 				strcpy(listaSaidas[iCodSaida].cDataSaida, cDataSaida);
 				strcpy(listaSaidas[iCodSaida].cHorarioSaida, cHorarioSaida);
-				time(&listaSaidas[iCodSaida].tDataHorarioSaida);
-				listaSaidas[iCodSaida].dDataHorarioSaida = listaSaidas[iCodSaida].tDataHorarioSaida;
+				time(&listaSaidas[iCodSaida].dtDataHorarioSaida);
+				listaSaidas[iCodSaida].dDataHorarioSaida = listaSaidas[iCodSaida].dtDataHorarioSaida;
 
 				/* Calculo para gerar o valor a ser pago */
 				/* Para obter o periodo de tempo que o veiculo ficou estacionado
 				 e necessario usar a funcao difftime. O resultado dela e sempre em segundos. */
 				dDiferencaSegundos = difftime(listaSaidas[iCodSaida].dDataHorarioSaida,
-						                      listaEntradas[iCodEntrada].dDataHorarioEntrada);
+						listaEntradas[iCodEntrada].dDataHorarioEntrada);
 
 				/* Nessa linha e realizada a conversao de segundos para horas. */
 				dDiferencaSegundos = (dDiferencaSegundos / 3600);
@@ -657,59 +704,56 @@ int main() {
 				/* Fim do calculo */
 
 				printf("\n >>>> O Valor a Ser Confirmado para Pagamento: R$ %.2lf<<<<\n", fValorPagamento);
-				printf("\n Deseja confirmar o pagamento?\n   0: Recusar\n   1: Confirmar. ");
+				printf("\n Deseja confirmar o pagamento?\n   0: Nao\n   1: Sim.\n");
 				scanf("%d", &iPagamentoConfirmado);
 
-				if (iPagamentoConfirmado == 0) {
-					while (iPagamentoConfirmado == 0) {
-						printf("\n Para concluir a saida do veiculo, precisa confirmar o pagamento.");
-						printf("\n Deseja confirmar o pagamento? 0: Recusar ou 1: Confirmar.");
-						scanf("%d", &iPagamentoConfirmado);
-					}
-				}
+				if (iPagamentoConfirmado == 1) {
+					printf("\n >>>>>> Pagamento Confirmado com Sucesso. <<<<<<\n");
+					fflush(stdin); /* Limpa a entrada padrao do sistema (teclado) */
+					printf("\n Tecle 'Enter' para gerar o recibo de saida de veiculo e de pagamento.\n");
+					getchar();
 
-				printf("\n >>>>>> Pagamento Confirmado com Sucesso. <<<<<<\n");
-				fflush(stdin); /* Limpa a entrada padrao do sistema (teclado) */
-				printf("\n Tecle 'Enter' para gerar o recibo de saida de veiculo e de pagamento.\n");
-				getchar();
+					/* Registra o pagamento */
+					strftime(cDataPagamento, 20, "%d/%m/%Y", localtime(&dtDataHorarioAgora));
+					strftime(cHorarioPagamento, 10, "%H:%M:%S", localtime(&dtDataHorarioAgora));
 
-				/* Registra o pagamento */
-				strftime(cDataPagamento, 20, "%d/%m/%Y", localtime(&dtDataHorarioAgora));
-				strftime(cHorarioPagamento, 10, "%H:%M:%S", localtime(&dtDataHorarioAgora));
+					iUltimoCodPagamento = iCodPagamento;
+					listaPagamentos[iCodPagamento].iCodPagamento = iCodPagamento;
+					strcpy(listaPagamentos[iCodPagamento].cPlaca, cPlaca);
+					strcpy(listaPagamentos[iCodPagamento].cDataPagamento, cDataPagamento);
+					strcpy(listaPagamentos[iCodPagamento].cHorarioPagamento, cHorarioPagamento);
+					listaPagamentos[iCodPagamento].fValorPagamento = fValorPagamento;
+					printf("\n ::: Saida de Veiculo realizada com Sucesso :::\n\n");
 
-				iUltimoCodPagamento = iCodPagamento;
-				listaPagamentos[iCodPagamento].iCodPagamento = iCodPagamento;
-				strcpy(listaPagamentos[iCodPagamento].cPlaca, cPlaca);
-				strcpy(listaPagamentos[iCodPagamento].cDataPagamento, cDataPagamento);
-				strcpy(listaPagamentos[iCodPagamento].cHorarioPagamento, cHorarioPagamento);
-				listaPagamentos[iCodPagamento].fValorPagamento = fValorPagamento;
-				printf("\n ::: Saida de Veiculo realizada com Sucesso :::\n\n");
+					/* Imprimir recibo de saida de veiculo */
+					printf(" ____________________________________________________\n");
+					printf(" ****** RECIBO DE SAIDA DE VEICULO E PAGAMENTO ******\n");
+					printf("   ID Saida:     %d\n", iCodSaida);
+					printf("   ID Pagamento: %d\n", iCodPagamento);
+					printf("   Placa:        %s\n", cPlaca);
+					printf("   Data:         %s\n", cDataSaida);
+					printf("   Horario:      %s\n", cHorarioSaida);
+					printf("   Valor Pago:   %.2lf\n", fValorPagamento);
+					printf(" ****************************************************\n");
+					printf(" ____________________________________________________\n");
+					iTotalVagasDisponiveis++;
+					iTotalSaidasHoje++;
 
-				/* Imprimir recibo de saida de veiculo */
-				printf(" ____________________________________________________\n");
-				printf(" ****** RECIBO DE SAIDA DE VEICULO E PAGAMENTO ******\n");
-				printf("   ID Saida:     %d\n", iCodSaida);
-				printf("   ID Pagamento: %d\n", iCodPagamento);
-				printf("   Placa:        %s\n", cPlaca);
-				printf("   Data:         %s\n", cDataSaida);
-				printf("   Horario:      %s\n", cHorarioSaida);
-				printf("   Valor Pago:   %.2lf\n", fValorPagamento);
-				printf(" ****************************************************\n");
-				printf(" ____________________________________________________\n");
-				iTotalVagasDisponiveis++;
-				iTotalSaidasHoje++;
+					printf("\n\n ::::: No. de Vagas Disponiveis: %d :::::\n", iTotalVagasDisponiveis);
 
-				printf("\n\n ::::: No. de Vagas Disponiveis: %d :::::\n", iTotalVagasDisponiveis);
-			} else {
-				printf(" ::: Veiculo com placa %s nao teve entrada no estacionamento. :::", cPlaca);
+				} else
+					printf("\n\n Saida de veiculo cancelada.");
 			}
+			else
+				printf(" ::: Veiculo com placa %s nao teve entrada no estacionamento. :::", cPlaca);
 
 			printf("\n\n Tecle 'Enter' para voltar ao menu do sistema.");
 			pausarMenuPrincipal();
 			break;
 
 		case 3: /* Pesquisa de Registro de Entrada */
-			printf(" ::: Pesquisa de Registro de Entrada :::\n");
+			printf(" ::: PESQUISA DE REGISTRO DE ENTRADA :::\n");
+			printf(" ::: AVISO: A placa deve ter 8 caracteres. Exemplo: AAA-1234. :::\n");
 			printf(" ::: Informe a Placa do Veiculo que deseja pesquisar: ");
 			scanf("%s", &cPlacaAux);
 
@@ -778,7 +822,8 @@ int main() {
 			break;
 
 		case 4: /* Pesquisa de Registro de Saida */
-			printf(" ::: Pesquisa de Registro de Saida :::\n");
+			printf(" ::: PESQUISA DE REGISTRO DE SAIDA :::\n");
+			printf(" ::: AVISO: A placa deve ter 8 caracteres. Exemplo: AAA-1234. :::\n");
 			printf(" ::: Informe a Placa do Veiculo que deseja pesquisar: ");
 			scanf("%s", &cPlacaAux);
 
@@ -847,7 +892,8 @@ int main() {
 			break;
 
 		case 5: /* Pesquisa de Registro de Pagamento */
-			printf(" ::: Pesquisa de Registro de Pagamento :::\n");
+			printf(" ::: PESQUISA DE REGISTRO DE PAGAMENTO :::\n");
+			printf(" ::: AVISO: A placa deve ter 8 caracteres. Exemplo: AAA-1234. :::\n");
 			printf(" ::: Informe a Placa do Veiculo que deseja pesquisar: ");
 			scanf("%s", &cPlacaAux);
 
@@ -902,126 +948,168 @@ int main() {
 					printf("    Placa:           %s\n", cPlaca);
 					printf("    Data:            %s\n", cDataPagamento);
 					printf("    Horario:         %s\n", cHorarioPagamento);
-					printf("    Valor Pagamento: %f\n", fValorPagamento);
-					iVeiculoEncontrado = 1;
+					printf("    Valor Pagamento: %.2lf\n", fValorPagamento);
+					iPagamentoEncontrado = 1;
 				} else {
-					iVeiculoEncontrado = 0;
+					iPagamentoEncontrado = 0;
 				}
 			}
 
-			if (iVeiculoEncontrado == 0) {
-				printf("\n\n ::: Veiculo nao Encontrado. :::\n");
+			if (iPagamentoEncontrado == 0) {
+				printf("\n\n ::: Pagamento nao Encontrado. :::\n");
 			}
 
 			printf("\n\n Tecle 'Enter' para voltar ao menu do sistema.");
 			pausarMenuPrincipal();
 			break;
 
-		case 6: /* Relatorio de todas as entradas */
-			printf(" :::: Relatorio de todas as entradas ::::\n");
+		case 6: /* Pesquisa de Registro de Fechamento */
+			printf(" ::: PESQUISA DE REGISTRO DE FECHAMENTO :::\n");
+			printf(" ::: AVISO: A Data do Fechamento deve ter 10 caracteres. Exemplo: 01/01/2015 :::\n");
+			printf(" ::: Informe a Data do Fechamento que deseja pesquisar: ");
+			scanf("%s", &cDataFechamentoAux);
 
-			for (i = 1; i <= iCodEntrada; i++) {
-				if (listaEntradas[i].iCodEntrada > 0) {
-					if ((cCharAux = strchr(listaEntradas[i].cPlaca, '\n')) != NULL)
-						*cCharAux = '\0';
+			if (strlen(cDataFechamentoAux) != 10) {
+				while (strlen(cDataFechamentoAux) != 10) {
+					printf("    A Data do Fechamento %s deve ter 10 caracteres. Exemplo: 01/01/2015\n", cDataFechamentoAux);
+					printf("    Informe a Data do Fechamento que deseja pesquisar: ");
+					scanf("%s", &cDataFechamentoAux);
 
-					if ((cCharAux = strchr(listaEntradas[i].cDataEntrada, '\n')) != NULL)
-						*cCharAux = '\0';
-
-					if ((cCharAux = strchr(listaEntradas[i].cHorarioEntrada, '\n')) != NULL)
-						*cCharAux = '\0';
-
-					printf("\n :: ID Entrada: %d\n", listaEntradas[i].iCodEntrada);
-					printf("    Placa:      %s\n", listaEntradas[i].cPlaca);
-					printf("    Data:       %s\n", listaEntradas[i].cDataEntrada);
-					printf("    Horario:    %s\n\n", listaEntradas[i].cHorarioEntrada);
-				}
-			}
-			printf(" :::: FIM DO RELATORIO ::::");
-
-			printf("\n\n Tecle 'Enter' para voltar ao menu do sistema.");
-			pausarMenuPrincipal();
-			break;
-
-		case 7: /* Relatorio de todas as saidas */
-			printf(" :::: Relatorio de todas as saidas ::::\n");
-
-			for (i = 1; i <= iCodSaida; i++) {
-				if (listaSaidas[i].iCodSaida > 0) {
-					if ((cCharAux = strchr(listaSaidas[i].cPlaca, '\n')) != NULL)
-						*cCharAux = '\0';
-
-					if ((cCharAux = strchr(listaSaidas[i].cDataSaida, '\n'))
-							!= NULL)
-						*cCharAux = '\0';
-
-					if ((cCharAux = strchr(listaSaidas[i].cHorarioSaida, '\n'))
-							!= NULL)
-						*cCharAux = '\0';
-
-					printf("\n :: ID Saida: %d\n", listaSaidas[i].iCodSaida);
-					printf("    Placa:    %s\n", listaSaidas[i].cPlaca);
-					printf("    Data :    %s\n", listaSaidas[i].cDataSaida);
-					printf("    Horario:  %s\n\n", listaSaidas[i].cHorarioSaida);
-				}
-			}
-			printf(" :::: FIM DO RELATORIO ::::");
-
-			printf("\n\n Tecle 'Enter' para voltar ao menu do sistema.");
-			pausarMenuPrincipal();
-			break;
-
-		case 8: /* Relatorio de todos os pagamentos */
-			printf(" :::: Relatorio de todos os pagamentos ::::\n");
-
-			for (i = 1; i <= iCodPagamento; i++) {
-				if (listaPagamentos[i].iCodPagamento > 0) {
-					if ((cCharAux = strchr(listaPagamentos[i].cPlaca, '\n')) != NULL)
-						*cCharAux = '\0';
-
-					if ((cCharAux = strchr(listaPagamentos[i].cDataPagamento, '\n')) != NULL)
-						*cCharAux = '\0';
-
-					if ((cCharAux = strchr(listaPagamentos[i].cHorarioPagamento, '\n')) != NULL)
-						*cCharAux = '\0';
-
-					printf("\n :: ID Pagamento: %d\n", listaPagamentos[i].iCodPagamento);
-					printf("    Placa:        %s\n", listaPagamentos[i].cPlaca);
-					printf("    Data:         %s\n", listaPagamentos[i].cDataPagamento);
-					printf("    Horario:      %s\n", listaPagamentos[i].cHorarioPagamento);
-					printf("    Pagamento:    %.2lf\n\n", listaPagamentos[i].fValorPagamento);
-				}
-			}
-			printf(" :::: FIM DO RELATORIO ::::");
-
-			printf("\n\n Tecle 'Enter' para voltar ao menu do sistema.");
-			pausarMenuPrincipal();
-			break;
-
-		case 9: /* Fechamento */
-			limparTela();
-
-			if ((iTotalEntradasHoje > iTotalSaidasHoje) && (iTotalEntradasHoje > 0)) {
-				printf("\n Ainda há %d veículos estacionados no pátio.", iTotalEntradasHoje - iTotalSaidasHoje);
-				printf("\n Deseja mesmo assim realizar o fechamento do caixa?\n   0: Nao.\n   1: Sim.");
-				scanf("%d", &iOpcaoFechamentoCaixa);
-
-				if (iOpcaoFechamentoCaixa == 0) {
-					while (iOpcaoFechamentoCaixa == 0) {
-						printf("\n Para concluir o fechamento do caixa, precisa confirmar com a opcao '1: Sim'.");
-						printf("\n Deseja mesmo assim realizar o fechamento do caixa?\n   0: Nao.\n   1: Sim.");
-						scanf("%d", &iOpcaoFechamentoCaixa);
+					/* Altera os caracteres da placa para ficarem maiusculos */
+					i = 0;
+					while (i < 11) {
+						cDataFechamentoAux[i] = toupper(cDataFechamentoAux[i]);
+						i++;
 					}
 				}
-			} else  {
-				printf("\n Não houve entradas de veículos no pátio.");
 			}
 
-			if (iOpcaoFechamentoCaixa == 1) {
-				printf(" :::: Fechamento do caixa. Data: %s ::::\n", cDataAberturaSistema);
+			/* Altera os caracteres da placa para ficarem maiusculos */
+			i = 0;
+			while (i < 11) {
+				cDataFechamentoAux[i] = toupper(cDataFechamentoAux[i]);
+				i++;
+			}
+			fflush(stdin);
 
+			for (i = 1; i <= iCodFechamento; i++) {
+				if ((cCharAux = strchr(cDataFechamentoAux, '\n')) != NULL)
+					*cCharAux = '\0';
+
+				if ((cCharAux = strchr(listaFechamentos[i].cDataFechamento, '\n')) != NULL)
+					*cCharAux = '\0';
+
+				if (strcasecmp(listaFechamentos[i].cDataFechamento, cDataFechamentoAux) == 0) {
+					iCodFechamento = i;
+					strcpy(cDataFechamento, listaFechamentos[iCodFechamento].cDataFechamento);
+					strcpy(cHorarioFechamento, listaFechamentos[iCodFechamento].cHorarioFechamento);
+					fValorTotalFechamento = listaFechamentos[iCodFechamento].fValorTotalFechamento;
+
+					if ((cCharAux = strchr(cDataFechamento, '\n')) != NULL)
+						*cCharAux = '\0';
+
+					if ((cCharAux = strchr(cHorarioFechamento, '\n')) != NULL)
+						*cCharAux = '\0';
+
+					printf("\n\n ::: Fechamento Encontrado com Sucesso :::\n");
+					printf("\n :: ID Fechamento:          %d\n", iCodFechamento);
+					printf("    Data:                   %s\n", cDataFechamento);
+					printf("    Horario:                %s\n", cHorarioFechamento);
+					printf("    Valor Total Fechamento: %.2lf\n", fValorTotalFechamento);
+					iFechamentoEncontrado = 1;
+				} else {
+					iFechamentoEncontrado = 0;
+				}
+			}
+
+			if (iFechamentoEncontrado == 0) {
+				printf("\n\n ::: Fechamento nao Encontrado. :::\n");
+			}
+
+			printf("\n\n Tecle 'Enter' para voltar ao menu do sistema.");
+			pausarMenuPrincipal();
+			break;
+
+		case 7: /* Relatorio de todas as entradas */
+			printf(" ::: RELATORIO DE TODAS AS ENTRADAS :::\n");
+			if (iUltimoCodEntrada > 0) {
+				for (i = 1; i <= iCodEntrada; i++) {
+					if (listaEntradas[i].iCodEntrada > 0) {
+						if ((cCharAux = strchr(listaEntradas[i].cPlaca, '\n')) != NULL)
+							*cCharAux = '\0';
+
+						if ((cCharAux = strchr(listaEntradas[i].cDataEntrada, '\n')) != NULL)
+							*cCharAux = '\0';
+
+						if ((cCharAux = strchr(listaEntradas[i].cHorarioEntrada, '\n')) != NULL)
+							*cCharAux = '\0';
+
+						printf("\n :: ID Entrada: %d\n", listaEntradas[i].iCodEntrada);
+						printf("    Placa:      %s\n", listaEntradas[i].cPlaca);
+						printf("    Data:       %s\n", listaEntradas[i].cDataEntrada);
+						printf("    Horario:    %s\n\n", listaEntradas[i].cHorarioEntrada);
+					}
+				}
+				printf(" ::: FIM DO RELATORIO :::\n\n");
+
+				printf(" Deseja salvar o relatorio em um arquivo de texto?\n   0: Nao\n   1: Sim.\n");
+				scanf("%d", &iPodeImprimirRelatorio);
+
+				if (iPodeImprimirRelatorio == 1) {
+					printf(" Informe o nome do novo arquivo: \n");
+					scanf("%s", &cNomeArquivo);
+
+					sprintf(cNomeArquivo, "%s%s", cNomeArquivo, cExtensaoArquivo);
+
+                    /* Cria arquivo para gravação */
+	                fRelatorio = fopen(cNomeArquivo, "w");
+
+                    if (fRelatorio == NULL) /* Se nao conseguiu criar */
+                        printf("Problemas na criacao do arquivo\n");
+
+					/* Salvar Entradas de Veiculos */
+					if (iCodEntrada >= iUltimoCodEntrada) {
+						if (iUltimoCodEntrada == 0)
+							iAux = 1;
+						else
+							iAux = iUltimoCodEntrada + 1;
+
+						iCodEntradaAux = iCodEntrada;
+
+						if (iCodEntradaAux > 0) {
+							for (i = iAux; i <= iCodEntradaAux; i++) {
+								iCodEntrada = i;
+
+								if ((cCharAux = strchr(listaEntradas[iCodEntrada].cPlaca, '\n')) != NULL)
+									*cCharAux = '\0';
+
+								if ((cCharAux = strchr(listaEntradas[iCodEntrada].cDataEntrada, '\n')) != NULL)
+									*cCharAux = '\0';
+
+								if ((cCharAux = strchr(listaEntradas[iCodEntrada].cHorarioEntrada, '\n')) != NULL)
+									*cCharAux = '\0';
+
+								fprintf(fRelatorio, "\n :: ID Entrada: %d\n", listaEntradas[iCodEntrada].iCodEntrada);
+								fprintf(fRelatorio, "    Placa:      %s\n", listaEntradas[iCodEntrada].cPlaca);
+								fprintf(fRelatorio, "    Data:       %s\n", listaEntradas[iCodEntrada].cDataEntrada);
+								fprintf(fRelatorio, "    Horario:    %s\n\n", listaEntradas[iCodEntrada].cHorarioEntrada);
+							}
+							fclose(fRelatorio);
+						}
+					}
+				}
+			} else
+				printf("\n Nao ha dados para emissao do relatorio de entradas.");
+
+			printf("\n\n Tecle 'Enter' para voltar ao menu do sistema.");
+			pausarMenuPrincipal();
+			break;
+
+		case 8: /* Relatorio de todas as saidas */
+			printf(" ::: RELATORIO DE TODAS AS SAIDAS :::\n");
+			if (iUltimoCodSaida > 0) {
 				for (i = 1; i <= iCodSaida; i++) {
-					/*if ((listaSaidas[i].iCodSaida > 0) && ()) { */
+					if (listaSaidas[i].iCodSaida > 0) {
 						if ((cCharAux = strchr(listaSaidas[i].cPlaca, '\n')) != NULL)
 							*cCharAux = '\0';
 
@@ -1033,9 +1121,276 @@ int main() {
 
 						printf("\n :: ID Saida: %d\n", listaSaidas[i].iCodSaida);
 						printf("    Placa:    %s\n", listaSaidas[i].cPlaca);
-						printf("    Data :    %s\n", listaSaidas[i].cDataSaida);
+						printf("    Data:     %s\n", listaSaidas[i].cDataSaida);
 						printf("    Horario:  %s\n\n", listaSaidas[i].cHorarioSaida);
-					/*}*/
+					}
+				}
+				printf(" ::: FIM DO RELATORIO :::\n\n");
+
+				printf(" Deseja salvar o relatorio em um arquivo de texto?\n   0: Nao\n   1: Sim.\n");
+				scanf("%d", &iPodeImprimirRelatorio);
+
+				if (iPodeImprimirRelatorio == 1) {
+					printf(" Informe o nome do novo arquivo: \n");
+					scanf("%s", &cNomeArquivo);
+
+					sprintf(cNomeArquivo, "%s%s", cNomeArquivo, cExtensaoArquivo);
+
+					/* Cria arquivo para gravação */
+	                fRelatorio = fopen(cNomeArquivo, "w");
+
+                    if (fRelatorio == NULL) /* Se nao conseguiu criar */
+                        printf("Problemas na criacao do arquivo\n");
+
+
+					/* Salvar Saidas de Veiculos */
+					if (iCodSaida >= iUltimoCodSaida) {
+						if (iUltimoCodSaida == 0)
+							iAux = 1;
+						else
+							iAux = iUltimoCodSaida + 1;
+
+						iCodSaidaAux = iCodSaida;
+
+						if (iCodSaidaAux > 0) {
+							for (i = iAux; i <= iCodSaidaAux; i++) {
+								iCodSaida = i;
+
+								if ((cCharAux = strchr(listaSaidas[iCodSaida].cPlaca, '\n')) != NULL)
+									*cCharAux = '\0';
+
+								if ((cCharAux = strchr(listaSaidas[iCodSaida].cDataSaida, '\n')) != NULL)
+									*cCharAux = '\0';
+
+								if ((cCharAux = strchr(listaSaidas[iCodSaida].cHorarioSaida, '\n')) != NULL)
+									*cCharAux = '\0';
+
+								fprintf(fRelatorio, "\n :: ID Saida: %d\n", listaSaidas[iCodSaida].iCodSaida);
+								fprintf(fRelatorio, "    Placa:    %s\n", listaSaidas[iCodSaida].cPlaca);
+								fprintf(fRelatorio, "    Data:     %s\n", listaSaidas[iCodSaida].cDataSaida);
+								fprintf(fRelatorio, "    Horario:  %s\n\n", listaSaidas[iCodSaida].cHorarioSaida);
+							}
+							fclose(fRelatorio);
+						}
+					}
+				}
+			} else
+				printf("\n Nao ha dados para emissao do relatorio de saidas.");
+
+			printf("\n\n Tecle 'Enter' para voltar ao menu do sistema.");
+			pausarMenuPrincipal();
+			break;
+
+		case 9: /* Relatorio de todos os pagamentos */
+			printf(" ::: RELATORIO DE TODOS OS PAGAMENTOS :::\n");
+			if (iUltimoCodPagamento > 0) {
+				for (i = 1; i <= iCodPagamento; i++) {
+					if (listaPagamentos[i].iCodPagamento > 0) {
+						if ((cCharAux = strchr(listaPagamentos[i].cPlaca, '\n')) != NULL)
+							*cCharAux = '\0';
+
+						if ((cCharAux = strchr(listaPagamentos[i].cDataPagamento, '\n')) != NULL)
+							*cCharAux = '\0';
+
+						if ((cCharAux = strchr(listaPagamentos[i].cHorarioPagamento, '\n')) != NULL)
+							*cCharAux = '\0';
+
+						printf("\n :: ID Pagamento:    %d\n", listaPagamentos[i].iCodPagamento);
+						printf("    Placa:           %s\n", listaPagamentos[i].cPlaca);
+						printf("    Data:            %s\n", listaPagamentos[i].cDataPagamento);
+						printf("    Horario:         %s\n", listaPagamentos[i].cHorarioPagamento);
+						printf("    Valor Pagamento: %2.lf\n\n", listaPagamentos[i].fValorPagamento);
+					}
+				}
+				printf(" ::: FIM DO RELATORIO :::\n\n");
+
+				printf(" Deseja salvar o relatorio em um arquivo de texto?\n   0: Nao\n   1: Sim.\n");
+				scanf("%d", &iPodeImprimirRelatorio);
+
+				if (iPodeImprimirRelatorio == 1) {
+					printf(" Informe o nome do novo arquivo: \n");
+					scanf("%s", &cNomeArquivo);
+
+					sprintf(cNomeArquivo, "%s%s", cNomeArquivo, cExtensaoArquivo);
+
+					/* Cria arquivo para gravação */
+	                fRelatorio = fopen(cNomeArquivo, "w");
+
+                    if (fRelatorio == NULL) /* Se nao conseguiu criar */
+                        printf("Problemas na criacao do arquivo\n");
+
+					/* Salvar Pagamentos */
+					if (iCodPagamento >= iUltimoCodPagamento) {
+						if (iUltimoCodPagamento == 0)
+							iAux = 1;
+						else
+							iAux = iUltimoCodPagamento + 1;
+
+						iCodPagamentoAux = iCodPagamento;
+
+						if (iCodPagamentoAux > 0) {
+							for (i = iAux; i <= iCodPagamentoAux; i++) {
+								iCodPagamento = i;
+
+								if ((cCharAux = strchr(listaPagamentos[iCodPagamento].cPlaca, '\n')) != NULL)
+									*cCharAux = '\0';
+
+								if ((cCharAux = strchr(listaPagamentos[iCodPagamento].cDataPagamento, '\n')) != NULL)
+									*cCharAux = '\0';
+
+								if ((cCharAux = strchr(listaPagamentos[iCodPagamento].cHorarioPagamento, '\n')) != NULL)
+									*cCharAux = '\0';
+
+								fprintf(fRelatorio, "\n :: ID Pagamento:    %d\n", listaPagamentos[iCodPagamento].iCodPagamento);
+								fprintf(fRelatorio, "    Placa:           %s\n", listaPagamentos[iCodPagamento].cPlaca);
+								fprintf(fRelatorio, "    Data:            %s\n", listaPagamentos[iCodPagamento].cDataPagamento);
+								fprintf(fRelatorio, "    Horario:         %s\n", listaPagamentos[iCodPagamento].cHorarioPagamento);
+								fprintf(fRelatorio, "    Valor Pagamento: %.2lf\n\n", listaPagamentos[iCodPagamento].fValorPagamento);
+							}
+							fclose(fRelatorio);
+						}
+					}
+				}
+			} else
+				printf("\n Nao ha dados para emissao do relatorio de pagamentos.");
+
+			printf("\n\n Tecle 'Enter' para voltar ao menu do sistema.");
+			pausarMenuPrincipal();
+			break;
+
+		case 10: /* Relatório de todos os fechamentos */
+			printf(" :::: RELATORIO DE TODOS OS FECHAMENTOS ::::\n");
+			if (iUltimoCodFechamento > 0) {
+				for (i = 1; i <= iCodFechamento; i++) {
+					if (listaFechamentos[i].iCodFechamento > 0) {
+						if ((cCharAux = strchr(listaFechamentos[i].cDataFechamento, '\n')) != NULL)
+							*cCharAux = '\0';
+
+						if ((cCharAux = strchr(listaFechamentos[i].cHorarioFechamento, '\n')) != NULL)
+							*cCharAux = '\0';
+
+						printf("\n :: ID Fechamento:          %d\n", listaFechamentos[i].iCodFechamento);
+						printf("    Data:                   %s\n", listaFechamentos[i].cDataFechamento);
+						printf("    Horario:                %s\n", listaFechamentos[i].cHorarioFechamento);
+						printf("    Valor Total Fechamento: %.2lf\n\n", listaFechamentos[i].fValorTotalFechamento);
+					}
+				}
+				printf(" ::: FIM DO RELATORIO :::\n\n");
+
+				printf(" Deseja salvar o relatorio em um arquivo de texto?\n   0: Nao\n   1: Sim.\n");
+				scanf("%d", &iPodeImprimirRelatorio);
+
+				if (iPodeImprimirRelatorio == 1) {
+					printf(" Informe o nome do novo arquivo: \n");
+					scanf("%s", &cNomeArquivo);
+
+					sprintf(cNomeArquivo, "%s%s", cNomeArquivo, cExtensaoArquivo);
+
+					/* Cria arquivo para gravação */
+	                fRelatorio = fopen(cNomeArquivo, "w");
+
+                    if (fRelatorio == NULL) /* Se nao conseguiu criar */
+                        printf("Problemas na criacao do arquivo\n");
+
+					/* Salvar Fechamentos */
+					if (iCodFechamento >= iUltimoCodFechamento) {
+						if (iUltimoCodFechamento == 0)
+							iAux = 1;
+						else
+							iAux = iUltimoCodFechamento + 1;
+
+						iCodFechamentoAux = iCodFechamento;
+
+						if (iCodFechamentoAux > 0) {
+							for (i = iAux; i <= iCodFechamentoAux; i++) {
+								iCodFechamento = i;
+
+								if ((cCharAux = strchr(listaFechamentos[iCodFechamento].cDataFechamento, '\n')) != NULL)
+									*cCharAux = '\0';
+
+								if ((cCharAux = strchr(listaFechamentos[iCodFechamento].cHorarioFechamento, '\n')) != NULL)
+									*cCharAux = '\0';
+
+								fprintf(fRelatorio, "\n :: ID Fechamento:           %d\n", listaFechamentos[iCodFechamento].iCodFechamento);
+								fprintf(fRelatorio, "    Data:                    %s\n", listaFechamentos[iCodFechamento].cDataFechamento);
+								fprintf(fRelatorio, "    Horario:                 %s\n", listaFechamentos[iCodFechamento].cHorarioFechamento);
+								fprintf(fRelatorio, "    Valor Total Fechamento:  %.2lf\n\n", listaFechamentos[iCodFechamento].fValorTotalFechamento);
+							}
+							fclose(fRelatorio);
+						}
+					}
+				}
+			} else
+				printf("\n Nao ha dados para emissao do relatorio de fechamentos.");
+
+			printf("\n\n Tecle 'Enter' para voltar ao menu do sistema.");
+			pausarMenuPrincipal();
+			break;
+
+		case 11: /* Realizar Fechamento do Caixa */
+			printf(" ::: FECHAMENTO DE CAIXA DO ESTACIONAMENTO :::\n");
+			if (iRealizouFechamentoHoje == 1) {
+				printf("\n Nao e possivel continuar.\n");
+				printf(" Houve fechamento de caixa no dia de hoje.");
+			}
+			else {
+				if ((iTotalEntradasHoje > iTotalSaidasHoje) && (iTotalEntradasHoje > 0)) {
+					printf("\n Ainda ha %d veiculo(s) estacionado(s) no patio do estacionamento.", iTotalEntradasHoje - iTotalSaidasHoje);
+					printf("\n Faca a saida com pagamento para realizar o fechamento de caixa.");
+					iOpcaoFechamentoCaixa = 0;
+				} else if ((iTotalEntradasHoje = iTotalSaidasHoje) && (iTotalEntradasHoje > 0))
+                    iOpcaoFechamentoCaixa = 1;
+				else {
+					printf("\n Nao houve entradas de veiculos no patio do estacionamento.");
+					iOpcaoFechamentoCaixa = 0;
+				}
+
+				if (iOpcaoFechamentoCaixa == 1) {
+					fValorTotalFechamento = 0;
+
+					strftime(cDataAberturaSistema, 20, "%d/%m/%Y", localtime(&dtDataHorarioAgora));
+
+					for (i = 1; i <= iUltimoCodPagamento; i++) {
+						if (strcmp(cDataAberturaSistema, listaPagamentos[i].cDataPagamento) == 0)
+							fValorTotalFechamento = fValorTotalFechamento + listaPagamentos[i].fValorPagamento;
+					}
+
+					strftime(cDataAberturaSistema, 20, "%d%m%Y", localtime(&dtDataHorarioAgora));
+
+					/* Registra o fechamento do caixa */
+					if (iCodFechamento == 0)
+						iCodFechamento = 1;
+
+					iUltimoCodFechamento = iCodFechamento;
+					listaFechamentos[iCodFechamento].iCodFechamento = iCodFechamento;
+					strftime(cDataFechamento, 20, "%d/%m/%Y", localtime(&dtDataHorarioAgora));
+					strftime(cHorarioFechamento, 10, "%H:%M:%S", localtime(&dtDataHorarioAgora));
+					strcpy(listaFechamentos[iCodFechamento].cDataFechamento, cDataFechamento);
+					strcpy(listaFechamentos[iCodFechamento].cHorarioFechamento, cHorarioFechamento);
+					time(&listaFechamentos[iCodFechamento].dtDataHorarioFechamento);
+					listaFechamentos[iCodFechamento].dDataHorarioFechamento = listaFechamentos[iCodFechamento].dtDataHorarioFechamento;
+					listaFechamentos[iCodFechamento].fValorTotalFechamento = fValorTotalFechamento;
+
+					/* Imprimir fechamento do caixa */
+					strftime(cDataAberturaSistema, 20, "%d/%m/%Y", localtime(&dtDataAberturaSistema));
+					printf(" _____________________________________________________________\n");
+					printf(" ::::::::::: FECHAMENTO DO CAIXA DATA: %s ::::::::::::\n", cDataAberturaSistema);
+					strftime(cDataAberturaSistema, 20, "%d%m%Y", localtime(&dtDataAberturaSistema));
+
+					if ((cCharAux = strchr(listaFechamentos[i].cDataFechamento, '\n')) != NULL)
+						*cCharAux = '\0';
+
+					if ((cCharAux = strchr(listaFechamentos[i].cHorarioFechamento, '\n')) != NULL)
+						*cCharAux = '\0';
+
+					printf("   ID Fechamento:          %d\n", iCodFechamento);
+					printf("   Data:                   %s\n", cDataFechamento);
+					printf("   Horario:                %s\n", cHorarioFechamento);
+					printf("   Valor Total Fechamento: %.2lf\n", fValorTotalFechamento);
+                    printf(" :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n");
+					printf(" _____________________________________________________________\n");
+
+					iRealizouFechamentoHoje = 1;
 				}
 			}
 
@@ -1043,16 +1398,27 @@ int main() {
 			pausarMenuPrincipal();
 			break;
 
-		case 0: /* Salva todos os dados que foram gravados nas structs e sai do sistema
-		 /********** ----------- Inicio da rotina de salvamento dos dados das structs -----------**********/
-			/* Criacao ou abertura do arquivo de texto */
-			/* Cria o nome do arquivo de saidas */
+		case 12: /* Consulta de Status do Caixa */
+			printf(" ::: CONSULTA DE STATUS DO CAIXA :::\n");
+			if (iRealizouFechamentoHoje == 0)
+				printf("\n Ainda nao houve fechamento do caixa no dia de hoje");
+			else
+				printf("\n Houve fechamento de caixa no dia de hoje.");
+
+			printf("\n\n Tecle 'Enter' para voltar ao menu do sistema.");
+			pausarMenuPrincipal();
+			break;
+
+		case 0: /* Salva todos os dados que foram gravados nas structs e sai do sistema */
+			/********** ----------- Inicio da rotina de salvamento dos dados das structs -----------**********/
+			/* Criacao ou abertura dos arquivos de textos */
+			/* Cria o nome do arquivo de entradas */
 			sprintf(cNomeArquivo, "%s%s%s", "entradas_", cDataAberturaSistema, cExtensaoArquivo);
 
-			if ((fEntradas = fopen(cNomeArquivo, "a+")) == NULL) {
-				perror("Erro ao abrir arquivo de entradas de veiculos.");
-				exit(1);
-			}
+			//fEntradas = fopen(cNomeArquivo, "a+");
+
+			if (fEntradas == NULL)
+				printf("Erro ao abrir arquivo de entradas de veiculos.");
 
 			/* Salvar Entradas de Veiculos */
 			if (iCodEntrada > iUltimoCodEntrada) {
@@ -1090,12 +1456,13 @@ int main() {
 				}
 			}
 
+			/* Cria o nome do arquivo de saídas */
 			sprintf(cNomeArquivo, "%s%s%s", "saidas_", cDataAberturaSistema, cExtensaoArquivo);
 
-			if ((fSaidas = fopen(cNomeArquivo, "a+")) == NULL) {
-				perror("Erro ao abrir arquivo de saidas de veiculos.");
-				exit(1);
-			}
+			//fSaidas = fopen(cNomeArquivo, "a+");
+
+			if (fSaidas == NULL)
+				printf("Erro ao abrir arquivo de saidas de veiculos.");
 
 			/* Salvar Saidas de Veiculos */
 			if (iCodSaida > iUltimoCodSaida) {
@@ -1133,12 +1500,13 @@ int main() {
 				}
 			}
 
+			/* Cria o nome do arquivo de pagamentos */
 			sprintf(cNomeArquivo, "%s%s%s", "pagamentos_", cDataAberturaSistema, cExtensaoArquivo);
 
-			if ((fPagamentos = fopen(cNomeArquivo, "a+")) == NULL) {
-				perror("Erro ao abrir arquivo de pagamentos.");
-				exit(1);
-			}
+			//fPagamentos = fopen(cNomeArquivo, "a+");
+
+			if (fPagamentos == NULL)
+				printf("Erro ao abrir arquivo de pagamentos.");
 
 			/* Salvar Pagamentos */
 			if (iCodPagamento > iUltimoCodPagamento) {
@@ -1171,27 +1539,70 @@ int main() {
 						fprintf(fPagamentos, "%s\n", listaPagamentos[iCodPagamento].cPlaca);
 						fprintf(fPagamentos, "%s\n", listaPagamentos[iCodPagamento].cDataPagamento);
 						fprintf(fPagamentos, "%s\n", listaPagamentos[iCodPagamento].cHorarioPagamento);
-						fprintf(fPagamentos, "%f", listaPagamentos[iCodPagamento].fValorPagamento);
+						fprintf(fPagamentos, "%.2lf", listaPagamentos[iCodPagamento].fValorPagamento);
 					}
 				}
 			}
 
+			/* Cria o nome do arquivo de fechamentos */
+			sprintf(cNomeArquivo, "%s%s%s", "fechamentos_", cDataAberturaSistema, cExtensaoArquivo);
+
+			//fFechamentos = fopen(cNomeArquivo, "a+");
+
+			if (fFechamentos == NULL)
+				printf("Erro ao abrir arquivo de fechamentos de caixa.");
+
+			/* Salvar Fechamentos */
+			if (iCodFechamento > iUltimoCodFechamento) {
+				if (iUltimoCodFechamento == 0)
+					iAux = 1;
+				else
+					iAux = iUltimoCodFechamento + 1;
+
+				iCodFechamentoAux = iCodFechamento;
+
+				if (iCodFechamentoAux > 0) {
+					for (i = iAux; i <= iCodFechamentoAux; i++) {
+						iCodFechamento = i;
+
+						if ((cCharAux = strchr(listaFechamentos[iCodFechamento].cDataFechamento, '\n')) != NULL)
+							*cCharAux = '\0';
+
+						if ((cCharAux = strchr(listaFechamentos[iCodFechamento].cHorarioFechamento, '\n')) != NULL)
+							*cCharAux = '\0';
+
+						if (verTamanhoArquivoTexto(cNomeArquivo) == 0)
+							fprintf(fFechamentos, "Fechamento\n");
+						else
+							fprintf(fFechamentos, "\n\nFechamento\n");
+
+						fprintf(fFechamentos, "%d\n", listaFechamentos[iCodFechamento].iCodFechamento);
+						fprintf(fFechamentos, "%s\n", listaFechamentos[iCodFechamento].cDataFechamento);
+						fprintf(fFechamentos, "%s\n", listaFechamentos[iCodFechamento].cHorarioFechamento);
+						fprintf(fFechamentos, "%.2lf", listaFechamentos[iCodFechamento].fValorTotalFechamento);
+					}
+				}
+			}
+
+			/* Cria o nome do arquivo de configurações */
 			sprintf(cNomeArquivo, "%s%s", "configuracoes", cExtensaoArquivo);
 
-			if ((fConfiguracoes = fopen(cNomeArquivo, "w")) == NULL) {
-				perror("Erro ao abrir arquivo de configuracoes.");
-				exit(1);
-			}
+			//fConfiguracoes = fopen(cNomeArquivo, "a+");
+
+			if (fConfiguracoes == NULL)
+				printf("Erro ao abrir arquivo de configuracoes.");
 
 			/* Salvar Configuracoes */
 			fprintf(fConfiguracoes, "%.2lf\n", fValorPrimeiraHora);
 			fprintf(fConfiguracoes, "%.2lf\n", fValorDemaisHoras);
 			fprintf(fConfiguracoes, "%d\n", iTotalVagasEstacionamento);
 			fprintf(fConfiguracoes, "%d\n", iTotalVagasDisponiveis);
+			fprintf(fConfiguracoes, "%d\n", iRealizouFechamentoHoje);
 
 			fclose(fEntradas);
 			fclose(fSaidas);
 			fclose(fPagamentos);
+			fclose(fFechamentos);
 			fclose(fConfiguracoes);
 			/********** ----------- Fim da rotina de salvamento dos dados das structs -----------**********/
 			return 0;
